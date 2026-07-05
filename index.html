@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Calc Pro - Quadrilateral</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; padding: 15px; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+          /* ট্যাব স্টাইল */
+        .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+        .tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; font-weight: bold; color: #7f8c8d; }
+        .tab.active { border-bottom: 3px solid #27ae60; color: #27ae60; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        h2 { text-align: center; color: #2c3e50; font-size: 1.4rem; margin-top: 0px !important; margin-bottom: 15px; }
+        .divider { border-top: 2px solid #ddd; margin: 15px 0; }
+        .label { font-size: 0.8rem; font-weight: bold; color: #000000; }
+        input, select { width: 100%; padding: 9px; margin: 5px 0 5px 0; border: 1px solid #bdc3c7; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; }
+
+
+/* টাইটেল এবং লাইনের জন্য আপডেট */
+.modal-content h3 {
+    text-align: center;
+    margin: 0 0 10px 0;      /* নিচের গ্যাপ কমিয়ে ১০px করা হলো */
+    padding-bottom: 10px;
+    border-bottom: 2px solid #ccc; /* একটি মাত্র মোটা বা স্পষ্ট লাইন */
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.modal-content { 
+    background: white; 
+    margin: 10% auto;       /* উপর থেকে ১০% নিচে, বাকিটা অটো */
+    padding: 20px; 
+    width: 85%;            /* স্ক্রিনের ৮৫% জায়গা নেবে, তাই দুই পাশে ৭.৫% গ্যাপ থাকবে */
+    max-width: 500px;      /* বড় স্ক্রিনে যেন খুব বেশি ছড়িয়ে না যায় */
+    border-radius: 15px;   /* কর্নারগুলো একটু গোল করার জন্য */
+    height: 70vh;          /* স্ক্রিনের উচ্চতার ৭০% */
+    display: flex; 
+    flex-direction: column; 
+    position: relative; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* একটি সুন্দর শ্যাডো বা ছায়া যোগ করা হলো */
+}
+
+
+.hist-list { 
+    flex-grow: 1; 
+    overflow-y: auto; 
+    margin: 20px 0; /* হিস্ট্রি লিস্টের উপরে ও নিচে জায়গা বাড়ানো হলো */
+}
+
+
+.hist-row { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-start; 
+    padding: 15px 0; 
+    border-bottom: 1px dashed #ccc; 
+    width: 100%; /* নিশ্চিত করুন যে এটি পুরো জায়গা নিচ্ছে */
+}
+
+.hist-info { 
+    flex: 1; 
+    font-size: 0.9rem; 
+    line-height: 1.6; 
+    color: #333; 
+    word-wrap: break-word; /* বড় টেক্সটকে ভেঙে নিচে নামিয়ে আনবে */
+    overflow-wrap: break-word; 
+    padding-right: 10px; /* ডিলিট আইকন থেকে টেক্সটকে দূরে রাখবে */
+    min-width: 0; /* এটি ফ্লেক্সবক্সের টেক্সট ওভারফ্লো সমস্যার সমাধান করে */
+}
+
+.del-btn { 
+    margin-left: 10px; 
+    cursor: pointer; 
+    color: #e74c3c; 
+    font-size: 1.2rem; 
+    align-self: center; 
+    flex-shrink: 0; /* ডিলিট বাটন যেন চ্যাপ্টা না হয়ে যায় */
+}
+    </style>
+</head>
+<body>
+
+
+<div class="container">
+    <h2>চতুর্ভুজ ক্যালকুলেটর</h2>
+     
+    <div class="tabs">
+        <div class="tab active" onclick="goNikhut()">নিখুঁত হিসাব</div>
+        <div class="tab" onclick="goAnumanik()">আনুমানিক হিসাব</div>
+    </div>
+
+    
+    <div id="nikhut" class="tab-content active">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div><div class="label">AB বাহু</div><input type="number" id="ab" placeholder="AB"></div>
+            <div><div class="label">BC বাহু</div><input type="number" id="bc" placeholder="BC"></div>
+            <div><div class="label">CD বাহু</div><input type="number" id="cd" placeholder="CD"></div>
+            <div><div class="label">DA বাহু</div><input type="number" id="da" placeholder="DA"></div>
+        </div>
+        <select id="mainMethod" onchange="updateOptions()">
+            <option value="diagonal">কর্ণ (Diagonal) জানা আছে</option>
+            <option value="angle">কোণ (Angle) জানা আছে</option>
+        </select>
+        <div id="subOptions"></div>
+
+        <!-- নিখুঁত হিসাবের ইনপুট -->
+    <button style="background:#27ae60; width: 100%; margin: 10px 0; padding: 12px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer;" onclick="calculateNikhut()">হিসাব করুন</button>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 3px;">
+    <button style="background:#e67e22; padding: 12px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer;" onclick="location.reload()">নতুন হিসাব</button>
+    <button style="background:#f39c12; padding: 12px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer;" onclick="openConverter()">Convert</button>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 3px;">
+    <button style="background:#2980b9; padding: 12px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer;" onclick="generatePDF()">PDF রিপোর্ট</button>
+    <button style="background:#7f8c8d; padding: 12px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer;" onclick="showHistory()">ইতিহাস দেখুন</button>
+</div>
+
+<div id="resDisplayNikhut" style="margin-top:10px; padding:15px; background:#f1f2f6; border-left:5px solid #27ae60; font-weight:bold; border-radius: 4px;">ফলাফল এখানে দেখাবে</div>
+<!-- নিচের টেক্সটটি একটি আলাদা ডিভে রাখুন -->
+<div id="noteText" style="font-size: 0.75rem; color: #555; text-align: center; margin-top: 5px;">
+    * বর্গক্ষেত্র বা আয়তক্ষেত্রের জন্য কোণের মান ৯০° ব্যবহার করুন।
+      </div>
+
+
+
+<div id="histModal" class="modal">
+    <div class="modal-content">
+        <span style="position:absolute; top:10px; right:15px; cursor:pointer; font-size:20px;" onclick="closeModal('histModal')">✕</span>
+        <h3>History</h3>
+        <div id="histList" class="hist-list"></div>
+        <button onclick="clearAllHistory()" style="background:#e74c3c;">🗑️ CLEAR ALL HISTORY</button>
+    </div></div>
+
+
+<div id="convModal" class="modal">
+     <div class="modal-content">
+          <span style="position:absolute; top:10px; right:15px; cursor:pointer;" onclick="closeModal('convModal')">✕</span>
+          <h3>Unit Converter</h3>
+<select id="convType" onchange="resetConverter()">
+<option value="inchFt">ইঞ্চি ↔ ফুট</option>
+<option value="linkSqFt">বর্গলিংক ↔ বর্গফুট</option>
+ <option value="acreDecimal">একর ↔ ডেসিমাল</option> 
+</select>
+<div style="display:flex; gap:10px;"><div style="flex:1"><div class="label" id="label1">ইঞ্চি</div><input type="number" id="val1" oninput="convertUnits(true)" placeholder="মান লিখুন"></div>
+
+<div style="flex:1"><div class="label" id="label2">ফুট</div><input type="number" id="val2" oninput="convertUnits(false)" placeholder="মান লিখুন"></div></div>
+
+<button style="background:#34495e; margin-top:10px;" onclick="showModal('notesModal')">ইউনিভার্সাল নোটস</button></div></div>
+
+<div id="notesModal" class="modal"><div class="modal-content"><span style="position:absolute; top:10px; right:15px; cursor:pointer;" onclick="closeModal('notesModal')">✕</span><h3>ইউনিভার্সাল নোটস</h3><p>• ১ একর = ১০০ ডেসিমাল<br>• ১ ডেসিমাল = ১০০০ বর্গলিংক = ৪৩৫.৬ বর্গফুট<br>• ১ ফুট = ১২ ইঞ্চি</p></div>
+
+    </div>
+ </div>
+ 
+
+    <!-- আনুমানিক হিসাবের ইনপুট -->
+<div id="anumanik" class="tab-content" style="display:none;">
+    
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div><div class="label">AB বাহু</div><input type="number" id="ab2" placeholder="AB"></div>
+        <div><div class="label">BC বাহু</div><input type="number" id="bc2" placeholder="BC"></div>
+        <div><div class="label">CD বাহু</div><input type="number" id="cd2" placeholder="CD"></div>
+        <div><div class="label">DA বাহু</div><input type="number" id="da2" placeholder="DA"></div>
+    </div> 
+    <button style="background:#27ae60; width: 100%; margin: 8px 0; padding: 15px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; display: block;" onclick="calculateAnumanik()">
+        হিসাব করুন (আনুমানিক)
+    </button>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 3px;">
+<button style="background:#ffc503; width: 100%; margin: 15px 0; padding: 15px; border: none; border-radius: 6px; color: black; font-weight: bold; cursor: pointer; display: block;" onclick="reset2()">
+        নতুন হিসাব
+    </button>
+<button style="background:#808080; width: 100%; margin: 15px 0; padding: 15px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; display: block;" onclick="showHistory2()">
+        ইতিহাস দেখুন
+    </button>
+  </div>
+<div id="histModal2" class="modal">
+    <div class="modal-content">
+        <span style="position:absolute; top:10px; right:15px; cursor:pointer; font-size:20px;" onclick="closeModal('histModal2')">✕</span>
+        <h3>Provisional Measurement History</h3>
+        <div id="histList2" class="hist-list"></div>
+        <button onclick="clearAllHistory2()" style="background:#e74c3c;">🗑️ CLEAR ALL HISTORY</button>
+    </div>
+</div>
+
+    <div id="resDisplayAnumanik" style="width: 100%; padding:15px; background:#f1f2f6; border-left:5px solid #27ae60; font-weight:bold; border-radius: 4px; font-size: 14px; box-sizing: border-box;">ফলাফল এখানে দেখাবে</div>
+    </div>
+
+ </div>
+
+
+
+
+<script>
+
+       // ট্যাব স্যুইচিং লজিক
+  function switchTab(targetId) {
+
+    closeModal("histModal");
+    closeModal("convModal");
+    closeModal("notesModal");
+
+    document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+
+    document.getElementById(targetId).style.display = "block";
+
+    if (targetId === "nikhut") {
+        document.querySelectorAll(".tab")[0].classList.add("active");
+    } else {
+        document.querySelectorAll(".tab")[1].classList.add("active");
+    }
+}
+       
+
+function goNikhut() {
+    switchTab("nikhut");
+}
+
+function goAnumanik() {
+    switchTab("anumanik");
+}
+ 
+    let lastData = null;
+
+    // সাব-অপশন আপডেট করার লজিক
+function updateOptions() {
+    let m = document.getElementById('mainMethod').value;
+    let subOptionsDiv = document.getElementById('subOptions');
+    
+    if (m === 'diagonal') {
+        subOptionsDiv.innerHTML = `
+            <select id="diagType">
+                <option value="AC">কর্ণ AC</option>
+                <option value="BD">কর্ণ BD</option>
+            </select>
+            <input type="number" id="diagVal" placeholder="কর্ণের মান">`;
+    } else {
+        subOptionsDiv.innerHTML = `
+            <select id="angleType">
+                <option value="A">কোণ A</option>
+                <option value="B">কোণ B</option>
+                <option value="C">কোণ C</option>
+                <option value="D">কোণ D</option>
+            </select>
+            <input type="number" id="angleVal" placeholder="কোণের মান (ডিগ্রি)">`;
+    }
+}
+
+// পেজ লোড হওয়ার সময় অপশনগুলো সেট করার জন্য
+window.onload = function() {
+    updateOptions();
+    switchTab("nikhut");
+};
+
+
+function calculateNikhut() {
+    // ১. নিখুঁত ট্যাবের ইনপুট নেওয়া
+    let ab = parseFloat(document.getElementById('ab').value) || 0;
+    let bc = parseFloat(document.getElementById('bc').value) || 0;
+    let cd = parseFloat(document.getElementById('cd').value) || 0;
+    let da = parseFloat(document.getElementById('da').value) || 0;
+    
+    if (ab <= 0 || bc <= 0 || cd <= 0 || da <= 0) { 
+        alert("দয়া করে নিখুঁত হিসাবের সকল বাহুর সঠিক মান দিন!"); 
+        return; 
+    }
+
+    // ২. ক্যালকুলেশন মোড ও মান নির্ধারণ
+    let m = document.getElementById('mainMethod').value;
+    let inputVal = parseFloat(document.getElementById(m === 'diagonal' ? 'diagVal' : 'angleVal').value) || 0;
+
+    if (inputVal <= 0) {
+        alert(m === 'diagonal' ? "কর্ণের মান ০ থেকে বড় হতে হবে।" : "কোণের মান ০ থেকে বড় হতে হবে।");
+        return;
+    }
+
+    let diagVal;
+    let inputType = (m === 'diagonal') ? "Diagonal" : "Angle";
+
+    if (m === 'diagonal') {
+        diagVal = inputVal;
+    } else {
+        if (inputVal >= 180) {
+            alert("কোণের মান ১৮০° এর কম হতে হবে।");
+            return;
+        }
+        diagVal = Math.sqrt(Math.pow(ab, 2) + Math.pow(bc, 2) - 2 * ab * bc * Math.cos(inputVal * Math.PI / 180));
+    }
+
+    // ৩. জ্যামিতিক যাচাই
+    function isValidTriangle(a, b, c) { return (a + b > c) && (a + c > b) && (b + c > a); }
+    if (!isValidTriangle(ab, bc, diagVal) || !isValidTriangle(cd, da, diagVal)) {
+        alert("ভুল মান! এই বাহু ও কোণ/কর্ণ দিয়ে জ্যামিতিকভাবে চতুর্ভুজ গঠন সম্ভব নয়।");
+        return;
+    }
+
+    // ৪. হিরনের সূত্রে ক্ষেত্রফল
+    function getArea(a, b, c) {
+        let s = (a + b + c) / 2;
+        let val = s * (s - a) * (s - b) * (s - c);
+        return val > 0 ? Math.sqrt(val) : 0;
+    }
+
+    let rawArea = getArea(ab, bc, diagVal) + getArea(cd, da, diagVal);
+    let rawPerim = ab + bc + cd + da;
+    
+    // ৫. ফলাফল প্রদর্শন
+    document.getElementById('resDisplayNikhut').innerHTML = `ক্ষেত্রফল: ${rawArea.toFixed(3)} বর্গ একক<br>পরিসীমা: ${rawPerim.toFixed(3)} একক`;
+    
+    // ৬. হিস্ট্রি সেভ (নতুন লজিক অনুযায়ী অটো-টাইটেল এবং আইডি)
+    let lastId = parseInt(localStorage.getItem('lastCalcId') || '0');
+    let newId = lastId + 1;
+    localStorage.setItem('lastCalcId', newId);
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    let now = new Date();
+    let day = now.getDate().toString().padStart(2, '0');
+    let month = monthNames[now.getMonth()];
+    let year = now.getFullYear();
+    
+    let subOptionName = (m === 'diagonal') ? document.getElementById('diagType').value : "Angle " + document.getElementById('angleType').value;
+    
+    let histData = { 
+        title: `হিসাব - ${day} ${month} ${year} - ${newId}`, // অটো-টাইটেল
+        ab, bc, cd, da, 
+        inputType, 
+        subOptionName, 
+        inputVal: inputVal.toFixed(3) + (m === 'diagonal' ? "" : "°"), 
+        area: rawArea.toFixed(3), 
+        perim: rawPerim.toFixed(3), 
+        date: now.toLocaleString() 
+    };
+    
+    let h = JSON.parse(localStorage.getItem('quadHistory') || '[]');
+    h.push(histData);
+    localStorage.setItem('quadHistory', JSON.stringify(h));
+}
+
+
+        
+ function calculateAnumanik() {
+    let ab = parseFloat(document.getElementById('ab2').value) || 0;
+    let bc = parseFloat(document.getElementById('bc2').value) || 0;
+    let cd = parseFloat(document.getElementById('cd2').value) || 0;
+    let da = parseFloat(document.getElementById('da2').value) || 0;
+    
+    if (ab <= 0 || bc <= 0 || cd <= 0 || da <= 0) { 
+        alert("দয়া করে আনুমানিক হিসাবের সকল বাহুর সঠিক মান দিন!"); 
+        return; 
+    }
+
+    // আনুমানিক ক্ষেত্রফল (গড় বাহুর গুণফল)
+    let result = ((ab + cd) / 2) * ((bc + da) / 2);
+    
+    // ফলাফল প্রদর্শন (সঠিক কোড)
+let perim = ab + bc + cd + da;
+document.getElementById('resDisplayAnumanik').innerHTML = `Estimated Area(ক্ষেত্রফল): ${result.toFixed(3)} বর্গ একক<br>পরিসীমা: ${perim.toFixed(3)} একক`;
+
+// quadHistory2-তে সেভ করার ডাটা ফরম্যাট
+    let histData = { 
+        ab: ab, 
+        bc: bc, 
+        cd: cd, 
+        da: da, 
+        type: 'Anumanik', 
+        area: result.toFixed(3), 
+        perim: perim.toFixed(3), 
+        date: new Date().toLocaleString(), // বর্তমান তারিখ ও সময়
+        isFav: false // স্টার বা ফেভারিট স্ট্যাটাস
+    };
+
+    // লোকাল স্টোরেজে সেভ করা
+    let h = JSON.parse(localStorage.getItem('quadHistory2') || '[]');
+    h.push(histData);
+    localStorage.setItem('quadHistory2', JSON.stringify(h));
+
+}
+
+
+function generatePDF() {
+    // ফলাফল প্রদর্শনের এলিমেন্ট থেকে ডাটা নিন
+    const resDisplay = document.getElementById('resDisplayNikhut').innerText;
+    
+    // চেক করুন ফলাফলটি কি ডিফল্ট টেক্সট নাকি আসল মান
+    // যদি ডিফল্ট টেক্সট থাকে তবে PDF তৈরি করবে না
+    if (resDisplay === "ফলাফল এখানে দেখাবে" || resDisplay.trim() === "") {
+        alert("দয়া করে আগে হিসাব করুন!");
+        return; // ফাংশনটি এখান থেকেই থেমে যাবে
+    }
+
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // ১. ফাইলের নাম: Area measurement_dd.mm.yyyy_hh.mm.ss.pdf
+    const now = new Date();
+    const pad = (n) => (n < 10 ? '0' + n : n);
+    const datePart = `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()}`;
+    const timePart = `${pad(now.getHours())}.${pad(now.getMinutes())}.${pad(now.getSeconds())}`;
+    const fileName = `Area measurement_${datePart}_${timePart}.pdf`;
+
+    // ২. টাইটেল
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("Area and Perimeter Report", 105, 20, { align: 'center' });
+    doc.setLineWidth(0.5);
+    doc.line(20, 25, 190, 25); 
+
+    // ৩. সাইডের ডাটা
+    const ab = document.getElementById('ab').value || 0;
+    const bc = document.getElementById('bc').value || 0;
+    const cd = document.getElementById('cd').value || 0;
+    const da = document.getElementById('da').value || 0;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(`Sides: AB=${ab}, BC=${bc}, CD=${cd}, DA=${da}`, 20, 45);
+
+    // ৪. ডাইনামিক ইনপুট (কর্ণ বা কোণ)
+    let m = document.getElementById('mainMethod').value;
+    let inputDisplay = "";
+    if (m === 'diagonal') {
+        let diagType = document.getElementById('diagType').value;
+        let diagVal = document.getElementById('diagVal').value || 0;
+        inputDisplay = `Diagonal ${diagType} = ${diagVal} unit`;
+    } else {
+        let angleType = document.getElementById('angleType').value;
+        let angleVal = document.getElementById('angleVal').value || 0;
+        inputDisplay = `Angle ${angleType} = ${angleVal} degree`;
+    }
+    doc.text(inputDisplay, 20, 55);
+
+    // ৫. ফলাফল (বাংলা টেক্সট ও অদ্ভুত চিহ্ন বাদ দিয়ে পরিষ্কার মান)
+    const resText = document.getElementById('resDisplayNikhut').innerText;
+    const lines = resText.split('\n');
+    const areaValue = lines[0].replace(/[^0-9.]/g, ''); 
+    const perimValue = lines[1] ? lines[1].replace(/[^0-9.]/g, '') : "0";
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text(`Area: ${areaValue} square unit`, 105, 85, { align: 'center' });
+    doc.text(`Perimeter: ${perimValue} unit`, 105, 100, { align: 'center' });
+
+    // ৬. ফুটার
+    doc.setLineWidth(0.5);
+    doc.line(20, 275, 190, 275); 
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.text(`Generated: ${datePart}, ${timePart}`, 20, 285);
+    doc.text(`Page 1 of 1`, 190, 285, { align: 'right' });
+
+    doc.save(fileName);
+}
+
+
+function showHistory() {
+    document.getElementById('histModal').style.display = 'block';
+    let h = JSON.parse(localStorage.getItem('quadHistory') || '[]');
+    
+    document.getElementById('histList').innerHTML = h.map((item, index) => ({...item, originalIndex: index}))
+        .reverse()
+        .map(item => {
+            let typeDisplay = (item.inputType === "Diagonal") ? "কর্ণ" : "কোণ";
+            return `
+            <div class="hist-row">
+                <div class="hist-info">
+                    <small style="color: #888;">${item.date}</small><br>
+                    
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <b style="color: #2c3e50;">${item.title}</b>
+                        <span style="cursor: pointer; font-size: 1rem;" onclick="editTitle(${item.originalIndex})">
+                            ✎
+                        </span>
+                    </div>
+
+                    বাহু: AB=${item.ab}, BC=${item.bc}, CD=${item.cd}, DA=${item.da}<br>
+                    ${typeDisplay} (${item.subOptionName}): ${item.inputVal}<br>
+                    <b>ক্ষেত্রফল = ${item.area} | পরিসীমা = ${item.perim}</b>
+                </div>
+                <div class="del-btn" onclick="deleteItem(${item.originalIndex})">🗑️</div>
+            </div>`;
+        }).join('');
+}
+
+function editTitle(index) {
+    let h = JSON.parse(localStorage.getItem('quadHistory') || '[]');
+    // প্রম্পটে পুরনো টাইটেলটি আগে থেকেই লিখে থাকবে
+    let newTitle = prompt("টাইটেল এডিট করুন:", h[index].title);
+    
+    if (newTitle !== null && newTitle.trim() !== "") {
+        h[index].title = newTitle;
+        localStorage.setItem('quadHistory', JSON.stringify(h));
+        showHistory(); // লিস্ট আপডেট
+    }
+}
+
+
+// আনুমানিক হিসাবের হিস্ট্রি ওপেন করার ফাংশন
+function showHistory2() {
+    document.getElementById('histModal2').style.display = 'block';
+    let h = JSON.parse(localStorage.getItem('quadHistory2') || '[]');
+    
+    // ডাটার সাথে অরিজিনাল ইনডেক্স যুক্ত করে তারপর রিভার্স করা হয়েছে
+    document.getElementById('histList2').innerHTML = h.map((item, index) => ({...item, originalIndex: index}))
+        .reverse()
+        .map(item => {
+            let starIcon = item.isFav ? '⭐' : '☆';
+            return `
+            <div class="hist-row">
+                <div class="hist-info">
+                    <small style="color: #888;">${item.date}</small>
+                    <span style="float:right; cursor:pointer; font-size: 1.5rem;" onclick="toggleFav2(${item.originalIndex})">
+                        ${starIcon}
+                    </span>
+                    <br>
+                    বাহু: AB=${item.ab}, BC=${item.bc}, CD=${item.cd}, DA=${item.da}<br>
+                    <b>ক্ষেত্রফল = ${item.area} | পরিসীমা = ${item.perim}</b>
+                </div>
+                <div class="del-btn" onclick="deleteItem2(${item.originalIndex})">🗑️</div>
+            </div>`;
+        }).join('');
+}
+
+
+
+
+// আলাদা ক্লিয়ার ফাংশন
+function clearAllHistory2() { 
+    if(confirm("আনুমানিক সব হিস্ট্রি মুছে ফেলবেন?")) { 
+        localStorage.removeItem('quadHistory2'); 
+        showHistory2(); 
+    } 
+}
+
+// আলাদা ডিলিট ফাংশন
+function deleteItem2(index) {
+    if(confirm("এই হিস্ট্রিটি মুছে ফেলতে চান?")) {
+        let h = JSON.parse(localStorage.getItem('quadHistory2') || '[]');
+        h.splice(index, 1);
+        localStorage.setItem('quadHistory2', JSON.stringify(h));
+        showHistory2();
+    }
+}
+
+function toggleFav2(index) {
+    let h = JSON.parse(localStorage.getItem('quadHistory2') || '[]');
+    
+    // সেফটি চেক: যদি কোনো কারণে ইনডেক্সটি অ্যারের সীমার বাইরে চলে যায় (যদিও সম্ভাবনা নেই)
+    if (h[index] !== undefined) {
+        // স্টার স্ট্যাটাস উল্টে দেওয়া
+        h[index].isFav = !h[index].isFav;
+        
+        // লোকাল স্টোরেজে আপডেট করা
+        localStorage.setItem('quadHistory2', JSON.stringify(h));
+        
+        // হিস্ট্রি রিফ্রেশ করা
+        showHistory2();
+    }
+}
+
+
+function openConverter() {
+    document.getElementById('convModal').style.display = 'block';
+}
+
+function showModal(id) {
+    document.getElementById(id).style.display = 'block';
+}
+
+// কনভার্টার টাইপ পরিবর্তন হলে ইনপুট রিসেট এবং লেবেল আপডেট
+function resetConverter() {
+    document.getElementById('val1').value = "";
+    document.getElementById('val2').value = "";
+    
+    let type = document.getElementById('convType').value;
+    let label1 = document.getElementById('label1');
+    let label2 = document.getElementById('label2');
+    
+    if (type === 'inchFt') {
+        label1.innerText = "ইঞ্চি";
+        label2.innerText = "ফুট";
+    } else if (type === 'linkSqFt') {
+        label1.innerText = "বর্গলিংক";
+        label2.innerText = "বর্গফুট";
+    } else if (type === 'acreDecimal') {
+        label1.innerText = "একর";
+        label2.innerText = "ডেসিমাল";
+    }
+}
+
+
+// কনভার্টার ক্যালকুলেশন
+function convertUnits(isFirst) {
+    let type = document.getElementById('convType').value;
+    let v1 = parseFloat(document.getElementById('val1').value);
+    let v2 = parseFloat(document.getElementById('val2').value);
+
+    if (isNaN(v1) && isNaN(v2)) return; // কোনো ইনপুট না থাকলে কিছু করবে না
+
+    if (type === 'inchFt') {
+        if (isFirst) {
+            document.getElementById('val2').value = !isNaN(v1) ? (v1 / 12).toFixed(4) : "";
+        } else {
+            document.getElementById('val1').value = !isNaN(v2) ? (v2 * 12).toFixed(4) : "";
+        }
+    } else if (type === 'linkSqFt') {
+        // ১ বর্গলিংক = ০.৪৩৫৬ বর্গফুট (এটি জমির পরিমাপের স্ট্যান্ডার্ড কনভার্সন)
+       if (isFirst) {
+        document.getElementById('val2').value = !isNaN(v1) ? (v1 * 0.4356).toFixed(4) : "";
+    } else {
+        document.getElementById('val1').value = !isNaN(v2) ? (v2 / 0.4356).toFixed(4) : "";
+       }
+
+    }else if (type === 'acreDecimal') {
+    // ১ একর = ১০০ ডেসিমাল
+    if (isFirst) {
+        // একর থেকে ডেসিমাল
+        document.getElementById('val2').value = !isNaN(v1) ? (v1 * 100).toFixed(2) : "";
+    } else {
+        // ডেসিমাল থেকে একর
+        document.getElementById('val1').value = !isNaN(v2) ? (v2 / 100).toFixed(4) : "";
+    }
+  }
+
+}
+
+
+
+function deleteItem(index) {
+    if(confirm("আপনি কি এই হিস্ট্রিটি মুছে ফেলতে চান?")) {
+        let h = JSON.parse(localStorage.getItem('quadHistory') || '[]');
+        
+        // নির্দিষ্ট ইনডেক্স অনুযায়ী আইটেমটি সরিয়ে ফেলা
+        h.splice(index, 1);
+        
+        // আপডেট করা লিস্ট আবার লোকাল স্টোরেজে রাখা
+        localStorage.setItem('quadHistory', JSON.stringify(h));
+        
+        // হিস্ট্রি মডালটি রিফ্রেশ করা
+        showHistory();
+    }
+}
+
+
+function reset2() {
+    // সকল ইনপুট ফিল্ড খালি করা
+    document.getElementById('ab2').value = "";
+    document.getElementById('bc2').value = "";
+    document.getElementById('cd2').value = "";
+    document.getElementById('da2').value = "";
+    
+    // ফলাফল প্রদর্শনের ডিভটি রিসেট করা
+    document.getElementById('resDisplayAnumanik').innerHTML = "ফলাফল এখানে দেখাবে";
+}
+
+
+    function clearAllHistory() { if(confirm("সব মুছে ফেলবেন?")) { localStorage.removeItem('quadHistory'); showHistory(); } }
+    
+    function closeModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.style.display = "none";
+    }
+}
+
+    
+</script>
+</body>
+</html>
